@@ -2,8 +2,9 @@
 
 namespace RyderAsKing\LaravelAiTrace\Tests;
 
-use RyderAsKing\LaravelAiTrace\LaravelAiTraceServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use RyderAsKing\LaravelAiTrace\LaravelAiTraceServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -11,18 +12,20 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
-        $this->artisan('migrate')->run();
+        $this->artisan('migrate:fresh')->run();
     }
 
     protected function getPackageProviders($app): array
     {
         return [
+            LivewireServiceProvider::class,
             LaravelAiTraceServiceProvider::class,
         ];
     }
 
     protected function defineEnvironment($app): void
     {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('database.default', 'mysql');
         $app['config']->set('database.connections.mysql', [
             'driver' => 'mysql',

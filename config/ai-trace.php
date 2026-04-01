@@ -1,5 +1,8 @@
 <?php
 
+use RyderAsKing\LaravelAiTrace\Http\Middleware\AuthorizeDashboard;
+use RyderAsKing\LaravelAiTrace\Http\Middleware\EnsureDashboardEnabled;
+
 return [
     'enabled' => env('AI_TRACE_ENABLED', true),
 
@@ -15,6 +18,13 @@ return [
 
     'dashboard' => [
         'enabled' => env('AI_TRACE_DASHBOARD_ENABLED', true),
+        'domain' => env('AI_TRACE_DASHBOARD_DOMAIN'),
+        'path' => env('AI_TRACE_DASHBOARD_PATH', 'ai-trace'),
+        'middleware' => [
+            'web',
+            EnsureDashboardEnabled::class,
+            AuthorizeDashboard::class,
+        ],
         'authorization_gate' => env('AI_TRACE_DASHBOARD_AUTHORIZATION_GATE', 'viewAiTrace'),
     ],
 
