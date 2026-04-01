@@ -44,7 +44,12 @@
                                 <x-ai-trace::td>{{ $span['status'] }}</x-ai-trace::td>
                                 <x-ai-trace::td>
                                     <div class="flex items-center gap-2">
-                                        <span class="inline-block h-2 w-24 min-w-1 rounded-full bg-gradient-to-r from-rose-500 to-violet-500"></span>
+                                        <span class="relative inline-block h-2 w-24 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                                            <span
+                                                class="absolute inset-y-0 left-0 rounded-full"
+                                                style="width: {{ max(0, min(100, (float) $span['bar_percent'])) }}%; background-color: #475569;"
+                                            ></span>
+                                        </span>
                                         <span class="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">{{ number_format((int) $span['duration_ms']) }} ms ({{ number_format((float) $span['bar_percent'], 1) }}%)</span>
                                     </div>
                                 </x-ai-trace::td>
