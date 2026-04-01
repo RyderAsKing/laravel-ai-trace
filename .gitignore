@@ -1,0 +1,7 @@
+references/
+playground/
+vendor/
+.phpunit.result.cache
+composer.lock
+docs/
+.env.testing

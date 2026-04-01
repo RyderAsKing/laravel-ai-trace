@@ -1,0 +1,46 @@
+{
+    "name": "ryderasking/laravel-ai-trace",
+    "description": "LangSmith-style waterfall tracing for Laravel AI SDK workloads.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "RyderAsKing"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/support": "^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "RyderAsKing\\LaravelAiTrace\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "RyderAsKing\\LaravelAiTrace\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "RyderAsKing\\LaravelAiTrace\\LaravelAiTraceServiceProvider"
+            ],
+            "aliases": {
+                "AiTrace": "RyderAsKing\\LaravelAiTrace\\Facades\\AiTrace"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
