@@ -70,7 +70,7 @@ Implemented cards on dashboard page:
 
 - `TraceVolumeCard` + `trace-volume-card.blade.php`
 - `SpanEventsChartCard` + `span-events-chart-card.blade.php`
-- `LatencyCard` + `latency-card.blade.php`
+- `TotalTokensCard` + `total-tokens-card.blade.php`
 - `TraceExplorerCard` + `trace-explorer-card.blade.php`
 - `WaterfallPreviewCard` + `waterfall-preview-card.blade.php`
 

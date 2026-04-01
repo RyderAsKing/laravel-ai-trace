@@ -65,6 +65,8 @@ class TraceQueryServiceTest extends TestCase
         $volume = $queryService->traceVolume();
         $errorRate = $queryService->errorRate();
         $latency = $queryService->latency();
+        $tokens = $queryService->totalTokens();
+        $tokenSeries = $queryService->tokenUsageSeries(30, 6);
         $waterfall = $queryService->waterfallPreview();
 
         $this->assertSame(2, $volume['total']);
@@ -75,6 +77,11 @@ class TraceQueryServiceTest extends TestCase
         $this->assertSame(120, $latency['p50']);
         $this->assertSame(320, $latency['p95']);
         $this->assertSame(320, $latency['max']);
+        $this->assertSame(320, $tokens['total']);
+        $this->assertSame(6, count($tokenSeries['labels']));
+        $this->assertCount(2, $tokenSeries['datasets']);
+        $this->assertSame('input', $tokenSeries['datasets'][0]['key']);
+        $this->assertSame('output', $tokenSeries['datasets'][1]['key']);
         $this->assertSame(1, $waterfall->count());
         $this->assertSame(1, $waterfall->first()['span_count']);
     }

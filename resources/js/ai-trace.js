@@ -75,14 +75,32 @@ const normalizeSeries = (series) => {
     };
 };
 
-const chartDatasets = (series, palette) => series.datasets.map((dataset, index) => ({
-    key: dataset.key,
-    label: dataset.label,
-    borderColor: palette[index % palette.length],
-    data: dataset.points,
-    order: index,
-    fill: false,
-}));
+const chartDatasets = (series, palette, chartType) => series.datasets.map((dataset, index) => {
+    const color = palette[index % palette.length];
+
+    if (chartType === 'bar') {
+        return {
+            key: dataset.key,
+            label: dataset.label,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 1,
+            borderRadius: 3,
+            borderSkipped: false,
+            data: dataset.points,
+            order: index,
+        };
+    }
+
+    return {
+        key: dataset.key,
+        label: dataset.label,
+        borderColor: color,
+        data: dataset.points,
+        order: index,
+        fill: false,
+    };
+});
 
 window.aiTraceDashboard = {
     formatDate,
@@ -90,6 +108,8 @@ window.aiTraceDashboard = {
         let chart;
         let cleanup;
         const palette = Array.isArray(config.palette) && config.palette.length > 0 ? config.palette : defaultPalette;
+        const chartType = config.chartType === 'bar' ? 'bar' : 'line';
+        const stacked = config.stacked === true;
 
         const destroyChart = () => {
             if (typeof cleanup === 'function') {
@@ -111,7 +131,7 @@ window.aiTraceDashboard = {
             const nextSeries = normalizeSeries(cloneSeries(incomingSeries));
 
             chart.data.labels = nextSeries.labels.map(formatDate);
-            chart.data.datasets = chartDatasets(nextSeries, palette);
+            chart.data.datasets = chartDatasets(nextSeries, palette, chartType);
             chart.update('none');
         };
 
@@ -120,10 +140,10 @@ window.aiTraceDashboard = {
                 const normalized = normalizeSeries(cloneSeries(config.series));
 
                 chart = new Chart(this.$refs.canvas, {
-                    type: 'line',
+                    type: chartType,
                     data: {
                         labels: normalized.labels.map(formatDate),
-                        datasets: chartDatasets(normalized, palette),
+                        datasets: chartDatasets(normalized, palette, chartType),
                     },
                     options: {
                         maintainAspectRatio: false,
@@ -145,8 +165,8 @@ window.aiTraceDashboard = {
                             },
                         },
                         scales: {
-                            x: { display: false },
-                            y: { display: false, beginAtZero: true },
+                            x: { display: false, stacked },
+                            y: { display: false, beginAtZero: true, stacked },
                         },
                         plugins: {
                             legend: { display: false },

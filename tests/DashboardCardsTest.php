@@ -20,7 +20,7 @@ class DashboardCardsTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Trace Volume')
-            ->assertSee('Latency')
+            ->assertSee('Total Tokens')
             ->assertSee('Span Events')
             ->assertSee('Trace Explorer')
             ->assertSee('Waterfall Preview');

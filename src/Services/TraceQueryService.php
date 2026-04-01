@@ -237,6 +237,41 @@ class TraceQueryService
         ];
     }
 
+    public function totalTokens(int $minutes = 60): array
+    {
+        $since = $this->windowStart($minutes);
+        $traces = Trace::query()
+            ->where('started_at', '>=', $since)
+            ->get(['total_tokens', 'total_input_tokens', 'total_output_tokens']);
+
+        $input = 0;
+        $output = 0;
+        $total = 0;
+
+        foreach ($traces as $trace) {
+            $inputTokens = (int) ($trace->total_input_tokens ?? 0);
+            $outputTokens = (int) ($trace->total_output_tokens ?? 0);
+            $traceTotal = (int) ($trace->total_tokens ?? 0);
+
+            if ($inputTokens === 0 && $outputTokens === 0 && $traceTotal > 0) {
+                $outputTokens = $traceTotal;
+            }
+
+            $input += $inputTokens;
+            $output += $outputTokens;
+            $total += ($inputTokens + $outputTokens);
+        }
+
+        return [
+            'minutes' => $minutes,
+            'period_label' => $this->periodLabel($minutes),
+            'input_total' => $input,
+            'output_total' => $output,
+            'total' => $total,
+            'since' => $since,
+        ];
+    }
+
     public function recentTraces(int $limit = 10): Collection
     {
         return Trace::query()
@@ -323,6 +358,75 @@ class TraceQueryService
             fn (SpanEvent $event): string => $event->event_type ?: 'unknown',
             ['stream_chunk', 'tool_start', 'tool_end', 'retry', 'annotation', 'system', 'unknown']
         );
+    }
+
+    public function tokenUsageSeries(int $minutes = 30, ?int $points = null): array
+    {
+        $points = $points ?? max(6, min(24, (int) ceil($minutes / 5)));
+        $windowSeconds = max(60, $minutes * 60);
+        $bucketSeconds = max(60, (int) ceil($windowSeconds / $points));
+        $start = now()->subSeconds($bucketSeconds * $points);
+        $startTimestamp = $start->getTimestamp();
+
+        $labels = [];
+        for ($index = 0; $index < $points; $index++) {
+            $labels[] = $start->copy()->addSeconds($bucketSeconds * $index)->format('Y-m-d H:i:s');
+        }
+
+        $inputPoints = array_fill(0, $points, 0);
+        $outputPoints = array_fill(0, $points, 0);
+
+        $traces = Trace::query()
+            ->where('started_at', '>=', $start)
+            ->get(['started_at', 'total_tokens', 'total_input_tokens', 'total_output_tokens']);
+
+        foreach ($traces as $trace) {
+            $timestamp = $trace->started_at;
+
+            if (! $timestamp) {
+                continue;
+            }
+
+            $offset = $timestamp->getTimestamp() - $startTimestamp;
+
+            if ($offset < 0) {
+                continue;
+            }
+
+            $bucket = (int) floor($offset / $bucketSeconds);
+
+            if ($bucket < 0 || $bucket >= $points) {
+                continue;
+            }
+
+            $inputTokens = (int) ($trace->total_input_tokens ?? 0);
+            $outputTokens = (int) ($trace->total_output_tokens ?? 0);
+            $traceTotal = (int) ($trace->total_tokens ?? 0);
+
+            if ($inputTokens === 0 && $outputTokens === 0 && $traceTotal > 0) {
+                $outputTokens = $traceTotal;
+            }
+
+            $inputPoints[$bucket] += $inputTokens;
+            $outputPoints[$bucket] += $outputTokens;
+        }
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'key' => 'input',
+                    'label' => 'input',
+                    'points' => $inputPoints,
+                ],
+                [
+                    'key' => 'output',
+                    'label' => 'output',
+                    'points' => $outputPoints,
+                ],
+            ],
+            'total' => array_sum($inputPoints) + array_sum($outputPoints),
+        ];
     }
 
     protected function buildGroupedSeries(

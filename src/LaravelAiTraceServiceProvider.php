@@ -12,6 +12,7 @@ use RyderAsKing\LaravelAiTrace\Listeners\LaravelAiSdkEventSubscriber;
 use RyderAsKing\LaravelAiTrace\Livewire\LatencyCard;
 use RyderAsKing\LaravelAiTrace\Livewire\PeriodSelector;
 use RyderAsKing\LaravelAiTrace\Livewire\SpanEventsChartCard;
+use RyderAsKing\LaravelAiTrace\Livewire\TotalTokensCard;
 use RyderAsKing\LaravelAiTrace\Livewire\TraceExplorerCard;
 use RyderAsKing\LaravelAiTrace\Livewire\TraceVolumeCard;
 use RyderAsKing\LaravelAiTrace\Livewire\WaterfallPreviewCard;
@@ -98,6 +99,7 @@ class LaravelAiTraceServiceProvider extends ServiceProvider
     {
         $this->callAfterResolving('livewire', function (LivewireManager $livewire): void {
             $livewire->component('ai-trace.trace-volume-card', TraceVolumeCard::class);
+            $livewire->component('ai-trace.total-tokens-card', TotalTokensCard::class);
             $livewire->component('ai-trace.latency-card', LatencyCard::class);
             $livewire->component('ai-trace.period-selector', PeriodSelector::class);
             $livewire->component('ai-trace.span-events-chart-card', SpanEventsChartCard::class);
