@@ -92,5 +92,5 @@ The package starts at `v1` and evolves incrementally (`v1.1`, `v1.2`, ...).
 
 - Build plan: `docs/laravel-ai-trace.md`
 - Package development notes: `docs/package-development-notes.md`
-- Laravel AI SDK source integration notes: `docs/laravel-ai-sdk-integration.md`
+- Laravel AI SDK trace reference: `docs/ai-sdk-trace-reference.md`
 - Upstream Laravel AI SDK docs snapshot: `docs/laravel-ai-sdk.md`
