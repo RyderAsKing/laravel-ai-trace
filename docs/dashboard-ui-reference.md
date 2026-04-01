@@ -87,6 +87,12 @@ Shared behavior across cards:
 - Use `wire:poll` intervals on cards for refresh.
 - Ask `TraceQueryService` for all display data.
 
+Trace explorer interaction model:
+
+- Status/provider/model filters plus quick filters (`errors only`, minimum duration, minimum tokens).
+- Sortable table columns for trace name, status, start time, duration, input tokens, output tokens, and total tokens.
+- Dense row presentation with status badges, provider/model grouping, and trace ID visibility.
+
 Note: `ErrorRateCard` exists (`src/Livewire/ErrorRateCard.php`, `resources/views/livewire/error-rate-card.blade.php`) but is not currently registered/rendered in provider/dashboard page.
 
 ### 5) Charting and Frontend JS
@@ -121,12 +127,10 @@ Note: `ErrorRateCard` exists (`src/Livewire/ErrorRateCard.php`, `resources/views
 
 ## Detail Page (Drilldown) Pattern
 
-`resources/views/trace-detail.blade.php` composes four cards:
+`resources/views/trace-detail.blade.php` composes a trace header and inspector:
 
 - Trace header/metadata
-- Span waterfall table (hierarchy + relative duration context)
-- Span content previews (privacy-mode aware)
-- Event timeline (privacy-mode aware payload rendering)
+- Interactive trace inspector (left span tree + right tabbed content)
 
 Data comes from `TraceQueryService::traceDetail()` and includes:
 
@@ -141,6 +145,12 @@ Detail page waterfall rendering conventions:
 - Waterfall bars use a fixed-width track with a filled segment whose inline width is clamped to `0..100` from `bar_percent`.
 - A span with `0%` renders empty, and `100%` renders full width (no always-full bars).
 - Waterfall bars use flat colors (no gradient fills).
+
+Trace inspector conventions:
+
+- Left pane is the span hierarchy and duration context for fast navigation.
+- Right pane uses tabs (`Input`, `Output`, `Events`, `Attributes`, `Raw JSON`) for focused inspection.
+- Events shown in the inspector are scoped to the currently selected span.
 
 ## URL and Filter State Conventions
 

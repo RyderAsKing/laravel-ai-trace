@@ -44,8 +44,9 @@ class TraceDetailPageTest extends TestCase
 
         $this->get(route('ai-trace.dashboard.trace', ['traceId' => 'trace-detail-page-1']))
             ->assertOk()
-            ->assertSee('Span Waterfall')
-            ->assertSee('Event Timeline')
+            ->assertSee('Trace Inspector')
+            ->assertSee('Input')
+            ->assertSee('Events')
             ->assertSee('[hidden]');
     }
 }

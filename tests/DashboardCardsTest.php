@@ -19,11 +19,10 @@ class DashboardCardsTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Trace Volume')
-            ->assertSee('Total Tokens')
-            ->assertSee('Span Events')
-            ->assertSee('Trace Explorer')
-            ->assertSee('Waterfall Preview');
+            ->assertSeeText('Trace Volume')
+            ->assertSeeText('Total Tokens')
+            ->assertSeeText('Span Events')
+            ->assertSeeText('Trace Explorer');
     }
 
     public function test_trace_volume_and_trace_explorer_cards_render_data(): void

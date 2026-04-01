@@ -67,7 +67,26 @@ class TraceQueryService
         $status = (string) ($filters['status'] ?? 'all');
         $provider = (string) ($filters['provider'] ?? 'all');
         $model = (string) ($filters['model'] ?? 'all');
+        $errorOnly = (bool) ($filters['error_only'] ?? false);
+        $minDurationMs = max(0, (int) ($filters['min_duration_ms'] ?? 0));
+        $minTokens = max(0, (int) ($filters['min_tokens'] ?? 0));
+        $sortBy = (string) ($filters['sort_by'] ?? 'started_at');
+        $sortDirection = strtolower((string) ($filters['sort_direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $since = $this->windowStart($minutes);
+
+        $sortableColumns = [
+            'started_at',
+            'name',
+            'status',
+            'duration_ms',
+            'total_tokens',
+            'total_input_tokens',
+            'total_output_tokens',
+        ];
+
+        if (! in_array($sortBy, $sortableColumns, true)) {
+            $sortBy = 'started_at';
+        }
 
         $query = Trace::query()
             ->where('started_at', '>=', $since)
@@ -78,8 +97,21 @@ class TraceQueryService
                         ->orderBy('started_at');
                 },
             ])
+            ->orderBy($sortBy, $sortDirection)
             ->orderByDesc('started_at')
             ->limit(max(1, min(100, $limit)));
+
+        if ($errorOnly) {
+            $query->where('status', 'error');
+        }
+
+        if ($minDurationMs > 0) {
+            $query->where('duration_ms', '>=', $minDurationMs);
+        }
+
+        if ($minTokens > 0) {
+            $query->where('total_tokens', '>=', $minTokens);
+        }
 
         if ($status !== 'all') {
             $query->where('status', $status);
@@ -107,6 +139,8 @@ class TraceQueryService
                 'status' => $trace->status,
                 'duration_ms' => $trace->duration_ms,
                 'total_tokens' => $trace->total_tokens,
+                'input_tokens' => $trace->total_input_tokens,
+                'output_tokens' => $trace->total_output_tokens,
                 'started_at' => $trace->started_at,
                 'provider' => $primarySpan?->provider,
                 'model' => $primarySpan?->model_normalized,
@@ -142,6 +176,7 @@ class TraceQueryService
             'trace' => $trace,
             'spans' => $spans->map(function (Span $span) use ($depthLookup, $maxDuration): array {
                 return [
+                    'id' => (int) $span->id,
                     'span_id' => $span->span_id,
                     'parent_span_id' => $span->parent_span_id,
                     'name' => $span->name ?: $span->span_id,
@@ -150,15 +185,20 @@ class TraceQueryService
                     'provider' => $span->provider,
                     'model' => $span->model_normalized,
                     'duration_ms' => (int) ($span->duration_ms ?? 0),
+                    'input_tokens' => (int) ($span->input_tokens ?? 0),
+                    'output_tokens' => (int) ($span->output_tokens ?? 0),
+                    'total_tokens' => (int) ($span->total_tokens ?? 0),
                     'depth' => $depthLookup[$span->span_id] ?? 0,
                     'bar_percent' => round(((int) ($span->duration_ms ?? 0) / $maxDuration) * 100, 2),
                     'started_at' => $span->started_at,
+                    'meta' => $span->meta,
                     'input_preview' => $this->sanitizeText($span->input_text),
                     'output_preview' => $this->sanitizeText($span->output_text),
                 ];
             })->values(),
             'events' => $events->map(function (SpanEvent $event) use ($idToName): array {
                 return [
+                    'span_id' => (int) $event->span_id,
                     'event_type' => $event->event_type,
                     'span_name' => $idToName[$event->span_id] ?? 'unknown',
                     'recorded_at' => $event->recorded_at,
