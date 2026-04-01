@@ -10,9 +10,17 @@ return [
 
     'record_content_mode' => env('AI_TRACE_RECORD_CONTENT_MODE', 'redacted'),
 
+    'redaction' => [
+        'callback' => null,
+    ],
+
     'sample_rate' => (float) env('AI_TRACE_SAMPLE_RATE', 1.0),
 
     'dedup_ttl_seconds' => (int) env('AI_TRACE_DEDUP_TTL_SECONDS', 300),
+
+    'stream' => [
+        'max_events_per_invocation' => (int) env('AI_TRACE_STREAM_MAX_EVENTS_PER_INVOCATION', 1000),
+    ],
 
     'retention_days' => (int) env('AI_TRACE_RETENTION_DAYS', 90),
 

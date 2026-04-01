@@ -6,6 +6,7 @@ use RyderAsKing\LaravelAiTrace\Models\Span;
 use RyderAsKing\LaravelAiTrace\Models\SpanEvent;
 use RyderAsKing\LaravelAiTrace\Models\Trace;
 use Illuminate\Support\Str;
+use DateTimeInterface;
 
 class TraceManager
 {
@@ -66,14 +67,20 @@ class TraceManager
         return $span->refresh();
     }
 
-    public function recordEvent(Trace $trace, Span $span, string $eventType, array $payload = []): SpanEvent
+    public function recordEvent(
+        Trace $trace,
+        Span $span,
+        string $eventType,
+        array $payload = [],
+        ?DateTimeInterface $recordedAt = null,
+    ): SpanEvent
     {
         return SpanEvent::query()->create([
             'trace_id' => $trace->id,
             'span_id' => $span->id,
             'event_type' => $eventType,
             'payload' => $payload,
-            'recorded_at' => now(),
+            'recorded_at' => $recordedAt ?? now(),
         ]);
     }
 }

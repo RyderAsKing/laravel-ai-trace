@@ -7,15 +7,23 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\LivewireManager;
 use RyderAsKing\LaravelAiTrace\Commands\AiTraceSmokeCommand;
+use RyderAsKing\LaravelAiTrace\Contracts\NormalizesSdkEvent;
+use RyderAsKing\LaravelAiTrace\Listeners\LaravelAiSdkEventSubscriber;
 use RyderAsKing\LaravelAiTrace\Livewire\LatencyCard;
 use RyderAsKing\LaravelAiTrace\Livewire\PeriodSelector;
 use RyderAsKing\LaravelAiTrace\Livewire\SpanEventsChartCard;
 use RyderAsKing\LaravelAiTrace\Livewire\TraceExplorerCard;
 use RyderAsKing\LaravelAiTrace\Livewire\TraceVolumeCard;
 use RyderAsKing\LaravelAiTrace\Livewire\WaterfallPreviewCard;
+use RyderAsKing\LaravelAiTrace\Services\SdkLifecycleManager;
 use RyderAsKing\LaravelAiTrace\Services\TraceManager;
 use RyderAsKing\LaravelAiTrace\Services\TraceQueryService;
 use RyderAsKing\LaravelAiTrace\Support\DashboardAssets;
+use RyderAsKing\LaravelAiTrace\Support\PrivacyRedactor;
+use RyderAsKing\LaravelAiTrace\Support\SdkCorrelationStore;
+use RyderAsKing\LaravelAiTrace\Support\SdkDeduplicator;
+use RyderAsKing\LaravelAiTrace\Support\SdkEventBuffer;
+use RyderAsKing\LaravelAiTrace\Support\SdkEventNormalizer;
 
 class LaravelAiTraceServiceProvider extends ServiceProvider
 {
@@ -28,6 +36,13 @@ class LaravelAiTraceServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(DashboardAssets::class, fn (): DashboardAssets => new DashboardAssets);
+        $this->app->singleton(PrivacyRedactor::class, fn (): PrivacyRedactor => new PrivacyRedactor);
+        $this->app->singleton(SdkCorrelationStore::class, fn (): SdkCorrelationStore => new SdkCorrelationStore);
+        $this->app->singleton(SdkDeduplicator::class, fn (): SdkDeduplicator => new SdkDeduplicator);
+        $this->app->singleton(SdkEventBuffer::class, fn (): SdkEventBuffer => new SdkEventBuffer);
+        $this->app->bind(NormalizesSdkEvent::class, SdkEventNormalizer::class);
+        $this->app->singleton(SdkLifecycleManager::class);
+        $this->app->singleton(LaravelAiSdkEventSubscriber::class);
         $this->app->singleton(TraceQueryService::class, fn (): TraceQueryService => new TraceQueryService);
 
         $this->app->alias(TraceManager::class, 'ai-trace');
@@ -44,6 +59,8 @@ class LaravelAiTraceServiceProvider extends ServiceProvider
         $this->registerDashboardLivewireComponents();
 
         $this->registerDashboardRoutes();
+
+        $this->registerLaravelAiSdkSubscriber();
 
         $this->publishes([
             __DIR__.'/../config/ai-trace.php' => config_path('ai-trace.php'),
@@ -87,5 +104,14 @@ class LaravelAiTraceServiceProvider extends ServiceProvider
             $livewire->component('ai-trace.trace-explorer-card', TraceExplorerCard::class);
             $livewire->component('ai-trace.waterfall-preview-card', WaterfallPreviewCard::class);
         });
+    }
+
+    protected function registerLaravelAiSdkSubscriber(): void
+    {
+        if (! config('ai-trace.enabled', true) || ! config('ai-trace.track_ai_sdk', true)) {
+            return;
+        }
+
+        $this->app['events']->subscribe($this->app->make(LaravelAiSdkEventSubscriber::class));
     }
 }
