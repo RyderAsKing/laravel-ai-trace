@@ -1,6 +1,7 @@
 references/
 playground/
 vendor/
+node_modules/
 .phpunit.result.cache
 composer.lock
 docs/
