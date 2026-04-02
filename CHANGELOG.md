@@ -2,6 +2,12 @@
 
 All notable changes to this package are documented in this file.
 
+## [1.0.5] - 2026-04-02
+
+### Documentation
+
+- Clarified release history: the prior commit message referenced `v1.0.1`, but the actual release tag for this update is `v1.0.5`.
+
 ## [1.0.0] - 2026-04-02
 
 Initial private release of Laravel AI Trace.
