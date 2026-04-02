@@ -196,12 +196,20 @@ class TraceQueryService
                     'output_preview' => $this->sanitizeText($span->output_text),
                 ];
             })->values(),
-            'events' => $events->map(function (SpanEvent $event) use ($idToName): array {
+            'events' => $events->values()->map(function (SpanEvent $event, int $index) use ($idToName): array {
+                $recordedAt = $event->recorded_at;
+
                 return [
+                    'event_key' => implode(':', [
+                        (int) $event->span_id,
+                        (string) ($event->event_type ?: 'unknown'),
+                        $recordedAt ? $recordedAt->format('Uv') : 'na',
+                        $index,
+                    ]),
                     'span_id' => (int) $event->span_id,
                     'event_type' => $event->event_type,
                     'span_name' => $idToName[$event->span_id] ?? 'unknown',
-                    'recorded_at' => $event->recorded_at,
+                    'recorded_at' => $recordedAt,
                     'payload' => $this->sanitizePayload($event->payload),
                 ];
             })->values(),
@@ -476,8 +484,7 @@ class TraceQueryService
         int $points,
         callable $groupResolver,
         array $preferredOrder = []
-    ): array
-    {
+    ): array {
         $labels = [];
         $groupValues = [];
         $startTimestamp = $start->getTimestamp();
