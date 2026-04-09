@@ -93,7 +93,7 @@ class TraceQueryService
             ->with([
                 'spans' => function ($spanQuery): void {
                     $spanQuery
-                        ->select('id', 'trace_id', 'provider', 'model_normalized', 'started_at')
+                        ->select('id', 'trace_id', 'provider', 'model_normalized', 'started_at', 'meta')
                         ->orderBy('started_at');
                 },
             ])
@@ -133,6 +133,18 @@ class TraceQueryService
             $primarySpan = $trace->spans
                 ->first(fn (Span $span): bool => ! empty($span->provider) || ! empty($span->model_normalized));
 
+            $traceUsage = $this->extractCachedUsage($trace->meta);
+            $cacheReadTokens = $traceUsage['cache_read_input_tokens'];
+            $cacheWriteTokens = $traceUsage['cache_write_input_tokens'];
+
+            if ($cacheReadTokens === 0 && $cacheWriteTokens === 0) {
+                foreach ($trace->spans as $span) {
+                    $spanUsage = $this->extractCachedUsage($span->meta);
+                    $cacheReadTokens += $spanUsage['cache_read_input_tokens'];
+                    $cacheWriteTokens += $spanUsage['cache_write_input_tokens'];
+                }
+            }
+
             return [
                 'trace_id' => $trace->trace_id,
                 'name' => $trace->name,
@@ -144,6 +156,8 @@ class TraceQueryService
                 'started_at' => $trace->started_at,
                 'provider' => $primarySpan?->provider,
                 'model' => $primarySpan?->model_normalized,
+                'cache_read_input_tokens' => $cacheReadTokens,
+                'cache_write_input_tokens' => $cacheWriteTokens,
             ];
         });
     }
@@ -156,6 +170,18 @@ class TraceQueryService
             ->orderBy('started_at')
             ->limit(max(1, min(1000, $spanLimit)))
             ->get();
+
+        $traceUsage = $this->extractCachedUsage($trace->meta);
+        $traceCacheReadTokens = $traceUsage['cache_read_input_tokens'];
+        $traceCacheWriteTokens = $traceUsage['cache_write_input_tokens'];
+
+        if ($traceCacheReadTokens === 0 && $traceCacheWriteTokens === 0) {
+            foreach ($spans as $span) {
+                $spanUsage = $this->extractCachedUsage($span->meta);
+                $traceCacheReadTokens += $spanUsage['cache_read_input_tokens'];
+                $traceCacheWriteTokens += $spanUsage['cache_write_input_tokens'];
+            }
+        }
 
         $maxDuration = max(1, (int) $spans->max('duration_ms'));
         $spanIdLookup = $spans->keyBy('span_id');
@@ -175,6 +201,8 @@ class TraceQueryService
         return [
             'trace' => $trace,
             'spans' => $spans->map(function (Span $span) use ($depthLookup, $maxDuration): array {
+                $usage = $this->extractCachedUsage($span->meta);
+
                 return [
                     'id' => (int) $span->id,
                     'span_id' => $span->span_id,
@@ -188,6 +216,8 @@ class TraceQueryService
                     'input_tokens' => (int) ($span->input_tokens ?? 0),
                     'output_tokens' => (int) ($span->output_tokens ?? 0),
                     'total_tokens' => (int) ($span->total_tokens ?? 0),
+                    'cache_read_input_tokens' => $usage['cache_read_input_tokens'],
+                    'cache_write_input_tokens' => $usage['cache_write_input_tokens'],
                     'depth' => $depthLookup[$span->span_id] ?? 0,
                     'bar_percent' => round(((int) ($span->duration_ms ?? 0) / $maxDuration) * 100, 2),
                     'started_at' => $span->started_at,
@@ -214,6 +244,8 @@ class TraceQueryService
                 ];
             })->values(),
             'content_mode' => (string) config('ai-trace.record_content_mode', 'redacted'),
+            'trace_cache_read_input_tokens' => $traceCacheReadTokens,
+            'trace_cache_write_input_tokens' => $traceCacheWriteTokens,
         ];
     }
 
@@ -636,5 +668,35 @@ class TraceQueryService
         $redacted = preg_replace('/\+?[0-9][0-9\-\s]{7,}[0-9]/', '[redacted-phone]', $redacted) ?? $redacted;
 
         return $redacted;
+    }
+
+    /**
+     * @return array{cache_read_input_tokens:int,cache_write_input_tokens:int}
+     */
+    protected function extractCachedUsage(mixed $meta): array
+    {
+        if (! is_array($meta)) {
+            return [
+                'cache_read_input_tokens' => 0,
+                'cache_write_input_tokens' => 0,
+            ];
+        }
+
+        $usage = $meta['usage'] ?? null;
+
+        if (! is_array($usage)) {
+            return [
+                'cache_read_input_tokens' => 0,
+                'cache_write_input_tokens' => 0,
+            ];
+        }
+
+        $cacheRead = $usage['cache_read_input_tokens'] ?? $usage['cacheReadInputTokens'] ?? 0;
+        $cacheWrite = $usage['cache_write_input_tokens'] ?? $usage['cacheWriteInputTokens'] ?? 0;
+
+        return [
+            'cache_read_input_tokens' => max(0, (int) $cacheRead),
+            'cache_write_input_tokens' => max(0, (int) $cacheWrite),
+        ];
     }
 }

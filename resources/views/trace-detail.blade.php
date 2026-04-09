@@ -3,6 +3,9 @@
         $traceInputTokens = (int) ($detail['trace']->total_input_tokens ?? 0);
         $traceOutputTokens = (int) ($detail['trace']->total_output_tokens ?? 0);
         $traceTotalTokens = (int) ($detail['trace']->total_tokens ?? ($traceInputTokens + $traceOutputTokens));
+        $traceCacheReadTokens = (int) ($detail['trace_cache_read_input_tokens'] ?? 0);
+        $traceCacheWriteTokens = (int) ($detail['trace_cache_write_input_tokens'] ?? 0);
+        $hasTraceCachedUsage = $traceCacheReadTokens > 0 || $traceCacheWriteTokens > 0;
         $traceTokenBase = max($traceInputTokens + $traceOutputTokens, 0);
         $traceInputPercent = $traceTokenBase > 0 ? round(($traceInputTokens / $traceTokenBase) * 100, 2) : 0;
         $traceOutputPercent = $traceTokenBase > 0 ? round(($traceOutputTokens / $traceTokenBase) * 100, 2) : 0;
@@ -25,6 +28,10 @@
             <span class="rounded-full bg-gray-100 px-2 py-1 font-medium text-gray-700 dark:bg-gray-700/50 dark:text-gray-300">Tokens: {{ number_format($traceTotalTokens) }}</span>
             <span class="rounded-full bg-emerald-100 px-2 py-1 font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">In: {{ number_format($traceInputTokens) }}</span>
             <span class="rounded-full bg-indigo-100 px-2 py-1 font-medium text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300">Out: {{ number_format($traceOutputTokens) }}</span>
+            @if ($hasTraceCachedUsage)
+                <span class="rounded-full bg-gray-200 px-2 py-1 font-medium text-gray-700 dark:bg-gray-700/70 dark:text-gray-300">Cache read: {{ number_format($traceCacheReadTokens) }}</span>
+                <span class="rounded-full bg-gray-200 px-2 py-1 font-medium text-gray-700 dark:bg-gray-700/70 dark:text-gray-300">Cache write: {{ number_format($traceCacheWriteTokens) }}</span>
+            @endif
         </div>
 
         <div class="mt-3">
@@ -44,6 +51,9 @@
                         Input {{ number_format($traceInputTokens) }} ({{ number_format($traceInputPercent, 1) }}%) • Output {{ number_format($traceOutputTokens) }} ({{ number_format($traceOutputPercent, 1) }}%)
                     </div>
                 </div>
+                @if ($hasTraceCachedUsage)
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Cached input tokens: read {{ number_format($traceCacheReadTokens) }}, write {{ number_format($traceCacheWriteTokens) }}.</p>
+                @endif
             @else
                 <div class="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700"></div>
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">No token usage recorded for this trace yet.</p>
@@ -237,6 +247,11 @@
                                         <span class="text-[11px] text-gray-500 dark:text-gray-400">{{ number_format((int) $span['duration_ms']) }} ms</span>
                                         <span class="text-[11px] text-gray-500 dark:text-gray-400">{{ number_format((int) $span['total_tokens']) }} tok</span>
                                     </div>
+                                    @if (((int) ($span['cache_read_input_tokens'] ?? 0)) > 0 || ((int) ($span['cache_write_input_tokens'] ?? 0)) > 0)
+                                        <div class="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
+                                            cache r {{ number_format((int) ($span['cache_read_input_tokens'] ?? 0)) }} · w {{ number_format((int) ($span['cache_write_input_tokens'] ?? 0)) }}
+                                        </div>
+                                    @endif
                                 </button>
 
                                 <div class="mt-2.5 space-y-1 border-l border-gray-300 pl-2 dark:border-gray-600">

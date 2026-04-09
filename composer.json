@@ -1,5 +1,6 @@
 {
     "name": "ryderasking/laravel-ai-trace",
+    "version": "1.0.6",
     "description": "LangSmith-style waterfall tracing for Laravel AI SDK workloads.",
     "type": "library",
     "license": "MIT",

@@ -111,6 +111,12 @@ class TraceQueryServiceTest extends TestCase
             'started_at' => now()->subMinutes(5),
             'input_text' => 'email me at john@example.com',
             'output_text' => 'call +12025551234',
+            'meta' => [
+                'usage' => [
+                    'cache_read_input_tokens' => 120,
+                    'cache_write_input_tokens' => 7,
+                ],
+            ],
         ]);
 
         Span::query()->create([
@@ -146,9 +152,15 @@ class TraceQueryServiceTest extends TestCase
 
         $this->assertCount(1, $filtered);
         $this->assertSame('trace-drilldown-1', $filtered->first()['trace_id']);
+        $this->assertSame(120, $filtered->first()['cache_read_input_tokens']);
+        $this->assertSame(7, $filtered->first()['cache_write_input_tokens']);
         $this->assertCount(2, $detail['spans']);
         $this->assertSame(0, $detail['spans']->first()['depth']);
         $this->assertSame(1, $detail['spans']->last()['depth']);
+        $this->assertSame(120, $detail['trace_cache_read_input_tokens']);
+        $this->assertSame(7, $detail['trace_cache_write_input_tokens']);
+        $this->assertSame(120, $detail['spans']->first()['cache_read_input_tokens']);
+        $this->assertSame(7, $detail['spans']->first()['cache_write_input_tokens']);
         $this->assertStringContainsString('[redacted-email]', (string) $detail['spans']->first()['input_preview']);
         $this->assertStringContainsString('[redacted-phone]', (string) $detail['spans']->first()['output_preview']);
         $this->assertStringContainsString('[redacted-token]', (string) ($detail['events']->first()['payload']['message'] ?? ''));

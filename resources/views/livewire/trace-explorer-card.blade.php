@@ -159,7 +159,14 @@
                                 ms</x-ai-trace::td>
                             <x-ai-trace::td numeric>{{ number_format((int) $trace['input_tokens']) }}</x-ai-trace::td>
                             <x-ai-trace::td numeric>{{ number_format((int) $trace['output_tokens']) }}</x-ai-trace::td>
-                            <x-ai-trace::td numeric>{{ number_format((int) $trace['total_tokens']) }}</x-ai-trace::td>
+                            <x-ai-trace::td numeric>
+                                <div>{{ number_format((int) $trace['total_tokens']) }}</div>
+                                @if (((int) ($trace['cache_read_input_tokens'] ?? 0)) > 0 || ((int) ($trace['cache_write_input_tokens'] ?? 0)) > 0)
+                                    <div class="text-[11px] font-normal text-gray-400 dark:text-gray-500">
+                                        cache r {{ number_format((int) ($trace['cache_read_input_tokens'] ?? 0)) }} · w {{ number_format((int) ($trace['cache_write_input_tokens'] ?? 0)) }}
+                                    </div>
+                                @endif
+                            </x-ai-trace::td>
                         </tr>
                     @endforeach
                 </tbody>

@@ -2,6 +2,22 @@
 
 All notable changes to this package are documented in this file.
 
+## [1.0.6] - 2026-04-09
+
+### Added
+
+- Added cached token usage visibility in Trace Detail (header badges and muted note under token ratio) when cache read/write usage is present.
+- Added cached token usage visibility in the span list within Trace Detail.
+- Added cached token usage visibility in Trace Explorer rows as muted subtext under total tokens.
+
+### Changed
+
+- Updated `TraceQueryService` to expose `cache_read_input_tokens` and `cache_write_input_tokens` for trace list/detail payloads, including fallback aggregation from span metadata when trace metadata is missing usage values.
+
+### Testing
+
+- Expanded `TraceQueryServiceTest` assertions to cover cache read/write token mapping for filtered traces and trace detail responses.
+
 ## [1.0.5] - 2026-04-02
 
 ### Documentation
